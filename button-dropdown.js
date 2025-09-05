@@ -11,10 +11,16 @@ class ButtonDropdownCard extends HTMLElement {
 
     if (!this.content) {
       this.innerHTML = `
-        <ha-card header="${this.config.title || "Dropdown"}">
-          <div id="dropdown" style="padding: 16px;">
-            <button id="main-btn">Aktionen ▾</button>
-            <div id="menu" style="display:none; background:#fff; border:1px solid #ccc; border-radius:8px; margin-top:5px;"></div>
+        <ha-card>
+          <div id="header" style="display:flex; align-items:center; padding:8px 16px;">
+            ${this.config.icon ? `<ha-icon icon="${this.config.icon}" style="margin-right:8px;"></ha-icon>` : ""}
+            <span class="card-title" style="font-weight:bold;">${this.config.title || ""}</span>
+          </div>
+          <div id="dropdown" style="padding: 8px 16px;">
+            <button id="main-btn" style="padding:8px 12px; border:none; border-radius:6px; background:#03a9f4; color:white; cursor:pointer;">
+              Aktionen ▾
+            </button>
+            <div id="menu" style="display:none; background:#fff; border:1px solid #ccc; border-radius:8px; margin-top:5px; min-width:180px; box-shadow:0 2px 5px rgba(0,0,0,0.2);"></div>
           </div>
         </ha-card>
       `;
@@ -33,18 +39,29 @@ class ButtonDropdownCard extends HTMLElement {
       const st = hass.states[ent];
       if (!st) return;
 
-      const name = st.attributes.friendly_name || ent;
-      const btn = document.createElement("button");
-      btn.textContent = name;
-      btn.style.display = "block";
-      btn.style.width = "100%";
-      btn.style.padding = "8px";
-      btn.style.border = "none";
-      btn.style.background = "transparent";
-      btn.style.cursor = "pointer";
+      // Defaults setzen
+      const title = item.title || st.attributes.friendly_name || ent;
+      const icon = item.icon || st.attributes.icon || "mdi:circle";
 
-      // Service abhängig von Domain wählen
-      btn.addEventListener("click", () => {
+      // Menü-Button bauen
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.padding = "8px";
+      row.style.cursor = "pointer";
+
+      const icn = document.createElement("ha-icon");
+      icn.setAttribute("icon", icon);
+      icn.style.marginRight = "8px";
+
+      const lbl = document.createElement("span");
+      lbl.textContent = title;
+
+      row.appendChild(icn);
+      row.appendChild(lbl);
+
+      // Klick-Aktion
+      row.addEventListener("click", () => {
         const domain = ent.split(".")[0];
         if (domain === "button") {
           hass.callService("button", "press", { entity_id: ent });
@@ -57,9 +74,10 @@ class ButtonDropdownCard extends HTMLElement {
         } else {
           console.warn("Keine Aktion für Domain:", domain);
         }
+        this.content.style.display = "none"; // Menü schließen
       });
 
-      this.content.appendChild(btn);
+      this.content.appendChild(row);
     });
   }
 
